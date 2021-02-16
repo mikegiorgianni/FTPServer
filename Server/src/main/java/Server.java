@@ -27,6 +27,11 @@ import java.util.logging.Logger;
 /**
  *
  * @author mike
+ * 1) InputStream
+ * 2) InputStreamReader
+ * 3) BufferedReader
+ * 
+ * 
  */
 public class Server {
     
@@ -36,49 +41,24 @@ public class Server {
         }
     }
 
-    class ClientCommunicator extends Thread {
-        ClientInfo clientinfo;
-        PrintWriter out;
-        BufferedReader in;
-        public ClientCommunicator(ClientInfo clientinfo){
-            this.clientinfo = clientinfo;
-            try {
-                out = new PrintWriter(clientinfo.client.getOutputStream(), true);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            try {
-                in = new BufferedReader(
-                        new InputStreamReader(clientinfo.client.getInputStream()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            out.println("Welcome!!");
-            pos.println("Welcome!!");
-            out.println("Port=" + clientinfo.port);
-            pos.println("Port=" + clientinfo.port);
-        }
-        public void run(){
-            startClientCommunicatorThread(clientinfo, in, out);
-        }
-    }
-
     int portnum = 2076;
+    String fi_path = "C:\\Users\\mike\\Documents\\SChool\\CS472\\serverlog.txt";
     ServerSocket serverSocket;
     HashMap<String, String> map = new HashMap<>();
     PrintStream pos;
     
-    public Server() {
-        String fi_path = "C:\\Users\\mike\\Documents\\SChool\\CS472\\serverlog.txt";
+    public Server(String logFileName, String portnum) {
+        this.portnum = portnum
+        this.fi_path = logFileName; 
         try {
             pos = new PrintStream(new BufferedOutputStream(new FileOutputStream(fi_path, true), 1024), true);
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         }
-        String path = "C:\\Users\\mike\\Documents\\SChool\\CS472\\serverconfig.txt";
-        readConfigFile(path);
-        String port = map.get("port_mode");
-        String pasv = map.get("pasv_mode");
+        // String path = "";//"C:\\Users\\mike\\Documents\\SChool\\CS472\\serverconfig.txt";
+        // readConfigFile(path);
+        String port = "3333"; //map.get("port_mode");
+        String pasv = "YES"; //map.get("pasv_mode");
         if (port.equals("YES") && pasv.equals("YES")){
             pos.println("PORT and PASV are enabled!");
         }else if (port.equals("YES") && pasv.equals("NO")) {
@@ -122,17 +102,6 @@ public class Server {
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, e);
         }
     }
-    class ClientInfo {
-        Socket client;
-        int port;
-        PrintWriter out;
-        BufferedReader in;
-        public ClientInfo(Socket client, int port) {
-            this.client = client;
-            this.port = port;
-        }
-        
-    }
     
     ArrayList<ClientInfo> clients = new ArrayList<>();
     int currentPort = 4000;
@@ -142,103 +111,20 @@ public class Server {
             try {
                 Socket clientSocket = serverSocket.accept();
                 clients.add(new ClientInfo(clientSocket, currentPort++));
-                Thread th = new ClientCommunicator(clients.get(clients.size()-1));
+                Thread th = new ClientCommunicator(clients.get(clients.size()-1), pos);
                 th.start();
             }catch(IOException ex) {
 
             }
 
             }
-
     }
 
-    public void startClientCommunicatorThread(ClientInfo clientinfo, BufferedReader in, PrintWriter out){
-        while(true){
-            String str = "";
-            String delims = "[ ]+";
-            try {
-                str = in.readLine();
-                String[] tokens = str.split(delims);
-                if (tokens.length == 2) {
-                    out.println(str);
-                    pos.println(str);
-                    try {
-                            FileWriter fi = new FileWriter("Userfile.txt");
-                            String user = tokens[1];
-                            out.println("Please enter a password.");
-                            pos.println("Please enter a password.");
-                            String password = in.readLine();
-                            String userpass = user.concat(password);
-                            String credentials = userpass.concat("\r\n");
-                            fi.write(credentials);
-                            fi.close();
-                            out.println("Your credentials were stored!");
-                            pos.println("Your credentials were stored!");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                } else {
-                    if (tokens[0].equals("USER")) {
-                        try {
-                            out.println("Please enter a username. ");
-                            pos.println("Please enter a username. ");
-                            FileWriter fi = new FileWriter("Userfile.txt");
-                            String user = in.readLine();
-                            out.println("Please enter a password.");
-                            pos.println("Please enter a password.");
-                            String password = in.readLine();
-                            String userpass = user.concat(" " + password);
-                            String credentials = userpass.concat("\r\n");
-                            fi.write(credentials);
-                            fi.close();
-                            out.println("Your credentials were stored!");
-                            pos.println("Your credentials were stored!");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    //port if statement
-                    } else if (tokens[0].equals("PORT")) {
-                            String path = "C:\\Users\\mike\\Documents\\SChool\\CS472\\serverconfig.txt";
-                            readConfigFile(path);
-                            String port = map.get("port_mode");
-                            if (port.equals("YES")) {
-                                out.println("PORT is enabled!");
-                                pos.println("PORT is enabled!");
-                            } else if (port.equals("NO")) {
-                                out.println("PORT is disabled!");
-                                pos.println("PORT is disabled!");
-                            }
-                        //pasv if statement
-                        } else if (tokens[0].equals("PASV")) {
-                            String path = "C:\\Users\\mike\\Documents\\SChool\\CS472\\serverconfig.txt";
-                            readConfigFile(path);
-                            String pasv = map.get("pasv_mode");
-                            if (pasv.equals("YES")) {
-                                out.println("PASV is enabled!");
-                                pos.println("PASV is enabled!");
-                            } else if (pasv.equals("NO")) {
-                                out.println("PASV is disabled!");
-                                pos.println("PASV is disabled!");
-                            }
-                        }
-                    }
-                } catch (IOException ex) {
-                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-            }
-                
-
-            //out.println(str);
-//            switch (state){
-//                case 1:
-//                    break;
-//                default:
-//                    //This is unrecognized command
-//                    break;
-//            }
-        }
-    }
     public static void main(String [] args){
-        Server s = new Server();
-
+        System.out.println("started server");
+        // must check to see if atleast two arguments are passed in, per instructions
+        String logFileName = args[0]; // This is required as the 1st perameter per instructions
+        String portNum = args[1];
+        Server s = new Server(logFileName, portNum);
     }
 }
