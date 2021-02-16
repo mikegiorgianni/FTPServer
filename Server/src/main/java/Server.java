@@ -48,7 +48,7 @@ public class Server {
     PrintStream pos;
     
     public Server(String logFileName, String portnum) {
-        this.portnum = portnum
+        this.portnum = Integer.parseInt(portnum);
         this.fi_path = logFileName; 
         try {
             pos = new PrintStream(new BufferedOutputStream(new FileOutputStream(fi_path, true), 1024), true);
@@ -71,7 +71,7 @@ public class Server {
         }
         
         try {
-            serverSocket = new ServerSocket(portnum);
+            serverSocket = new ServerSocket(this.portnum);
             
             /*Thread th = (new Thread(){public void run(){ListentoIncomingRequests();}});
             th.start();*/
