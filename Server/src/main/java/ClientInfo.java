@@ -11,5 +11,7 @@ public class ClientInfo {
     public ClientInfo(Socket client, int port) {
         this.client = client;
         this.port = port;
+        System.out.println("new connection from client");
+        System.out.println(client.getInetAddress());
     }
 }
